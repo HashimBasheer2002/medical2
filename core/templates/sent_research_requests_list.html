@@ -1,0 +1,174 @@
+<style>
+    /* Modern styling for research requests page */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f5f7fa;
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    h2 {
+        color: #2c3e50;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 8px;
+        margin-top: 25px;
+        font-size: 28px;
+    }
+
+    /* Table styling */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 25px 0;
+        background-color: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    th {
+        background-color: #3498db;
+        color: white;
+        text-align: left;
+        padding: 15px;
+        font-weight: 600;
+    }
+
+    td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #eee;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Links styling */
+    a {
+        color: #3498db;
+        text-decoration: none;
+        transition: color 0.3s;
+        font-weight: 500;
+    }
+
+    a:hover {
+        color: #2980b9;
+        text-decoration: underline;
+    }
+
+    /* Action button styling */
+    .action-link {
+        display: inline-block;
+        background-color: #3498db;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .action-link:hover {
+        background-color: #2980b9;
+        text-decoration: none;
+    }
+
+    /* Status styling */
+    .status {
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-weight: 500;
+        display: inline-block;
+    }
+
+    .status-pending {
+        background-color: #f39c12;
+        color: white;
+    }
+
+    .status-accepted {
+        background-color: #2ecc71;
+        color: white;
+    }
+
+    .status-rejected {
+        background-color: #e74c3c;
+        color: white;
+    }
+
+    /* Navigation buttons */
+    .navigation-buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .btn {
+        display: inline-block;
+        background-color: #3498db;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn:hover {
+        background-color: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        text-decoration: none;
+    }
+</style>
+
+<h2>Sent Research Collaboration Requests</h2>
+
+<table>
+    <tr>
+        <th>To Hospital</th>
+        <th>Research Project</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+    {% for request in sent_requests %}
+    <tr>
+        <td>{{ request.to_hospital.name }}</td>
+        <td>{{ request.research_project.title }}</td>
+        <td>
+            {% if request.status == "Pending" %}
+                <span class="status status-pending">{{ request.status }}</span>
+            {% elif request.status == "Accepted" %}
+                <span class="status status-accepted">{{ request.status }}</span>
+            {% elif request.status == "Rejected" %}
+                <span class="status status-rejected">{{ request.status }}</span>
+            {% else %}
+                {{ request.status }}
+            {% endif %}
+        </td>
+        <td>
+            {% if request.status == "Accepted" %}
+                <a href="{% url 'work_on_research' request.research_project.id %}" class="action-link">View Progress</a>
+            {% else %}
+                <span>{{ request.status }}</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="4" style="text-align: center; padding: 20px;">No research collaboration requests sent yet.</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<div class="navigation-buttons">
+    <a href="{% url 'dashboard' %}" class="btn">Back to Dashboard</a>
+</div>

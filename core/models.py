@@ -300,3 +300,43 @@ class Complaint(models.Model):
     def __str__(self):
         return f"Complaint from {self.patient.username} - {self.subject}"
 
+class ResearchProject(models.Model):
+    title = models.CharField(max_length=255)  # ✅ Correct field name
+    description = models.TextField()
+    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name="projects", null=True, blank=True)
+
+    def __str__(self):
+        return self.title
+
+
+class ResearchRequest(models.Model):
+    from_hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name="sent_research_requests")
+    to_hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name="received_research_requests")
+    research_project = models.ForeignKey(ResearchProject, on_delete=models.CASCADE)
+    status = models.CharField(max_length=50, choices=[("Pending", "Pending"), ("Accepted", "Accepted"), ("Rejected", "Rejected")], default="Pending")
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+class ResearchCollaboration(models.Model):
+    project = models.ForeignKey(ResearchProject, on_delete=models.CASCADE)
+    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+
+
+class ResearchProgress(models.Model):
+    project = models.ForeignKey(ResearchProject, on_delete=models.CASCADE, related_name="progress")
+    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE)
+    progress_text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Progress by {self.hospital.name} on {self.project.title}"
+
+class ResearchDocument(models.Model):
+    project = models.ForeignKey(ResearchProject, on_delete=models.CASCADE, related_name="documents")
+    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE)
+    file = models.FileField(upload_to="research_documents/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Document for {self.project.title} by {self.hospital.name}"

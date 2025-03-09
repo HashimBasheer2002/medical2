@@ -1219,3 +1219,125 @@ def mark_complaint_resolved(request, complaint_id):
     complaint.is_resolved = True
     complaint.save()
     return redirect('admin_view_complaints')
+
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from .models import ResearchProject, ResearchRequest, ResearchCollaboration, Hospital
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import ResearchRequest, Hospital
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.core.files.storage import FileSystemStorage
+from .models import ResearchProject, ResearchRequest, ResearchCollaboration, ResearchProgress, ResearchDocument, Hospital
+
+@login_required
+def research_request(request):
+    affiliated_hospitals = request.user.hospital.affiliated_hospitals.all()
+    research_projects = ResearchProject.objects.filter(hospital=request.user.hospital)  
+
+    if request.method == "POST":
+        to_hospital_id = request.POST.get("to_hospital")
+        project_id = request.POST.get("project_id")
+
+        to_hospital = get_object_or_404(Hospital, id=to_hospital_id)
+        research_project = get_object_or_404(ResearchProject, id=project_id)
+
+        ResearchRequest.objects.create(
+            from_hospital=request.user.hospital,
+            to_hospital=to_hospital,
+            research_project=research_project
+        )
+
+        return redirect("dashboard")
+
+    return render(request, "send_research_request.html", {
+        "affiliated_hospitals": affiliated_hospitals,
+        "research_projects": research_projects
+    })
+
+@login_required
+def received_research_requests(request):
+    research_requests = ResearchRequest.objects.filter(to_hospital=request.user.hospital)
+    accepted_requests = ResearchRequest.objects.filter(to_hospital=request.user.hospital, status="Accepted")
+
+    return render(request, "received_research_requests.html", {
+        "research_requests": research_requests,
+        "accepted_requests": accepted_requests
+    })
+
+@login_required
+def accept_research_request(request, request_id):
+    research_request = get_object_or_404(ResearchRequest, id=request_id)
+    research_request.status = "Accepted"
+    research_request.save()
+
+    # Allow hospital to work on the research project
+    ResearchCollaboration.objects.create(
+        project=research_request.research_project,
+        hospital=research_request.to_hospital
+    )
+
+    return redirect("received_research_requests")
+
+@login_required
+def reject_research_request(request, request_id):
+    research_request = get_object_or_404(ResearchRequest, id=request_id)
+    research_request.status = "Rejected"
+    research_request.save()
+    return redirect("received_research_requests")
+
+@login_required
+def create_research_project(request):
+    if request.method == "POST":
+        title = request.POST.get("title")
+        description = request.POST.get("description")
+
+        ResearchProject.objects.create(
+            title=title,
+            description=description,
+            hospital=request.user.hospital
+        )
+
+        return redirect("send_research_request")
+
+    return render(request, "create_research_project.html")
+
+@login_required
+def work_on_research(request, project_id):
+    research_project = get_object_or_404(ResearchProject, id=project_id)
+    
+    # Change 'research_project' to 'project'
+    progress_updates = ResearchProgress.objects.filter(project=research_project)  
+
+    if request.method == "POST":
+        progress_text = request.POST.get("progress_update")
+        document = request.FILES.get("document")
+
+        ResearchProgress.objects.create(
+            project=research_project,  # Change 'research_project' to 'project'
+            hospital=request.user.hospital,
+            progress_text=progress_text,
+            document=document
+        )
+
+        return redirect("work_on_research", project_id=project_id)
+
+    return render(request, "work_on_research.html", {
+        "research_project": research_project,
+        "progress_updates": progress_updates
+    })
+
+
+
+@login_required
+def sent_research_requests(request):
+    sent_requests = ResearchRequest.objects.filter(from_hospital=request.user.hospital)
+    
+    return render(request, "sent_research_requests_list.html", {
+        "sent_requests": sent_requests
+    })

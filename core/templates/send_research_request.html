@@ -1,0 +1,135 @@
+<style>
+    /* Modern styling for research collaboration form */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f5f7fa;
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    h2 {
+        color: #2c3e50;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 8px;
+        margin-top: 25px;
+        font-size: 28px;
+    }
+
+    /* Form styling */
+    form {
+        background-color: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin: 25px 0;
+        max-width: 600px;
+    }
+
+    label {
+        display: block;
+        margin: 15px 0 8px;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: #fff;
+        font-family: inherit;
+        font-size: 16px;
+        color: #333;
+        margin-bottom: 15px;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px top 50%;
+        background-size: 12px auto;
+    }
+
+    select:focus {
+        border-color: #3498db;
+        outline: none;
+    }
+
+    button[type="submit"] {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 14px 24px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 16px;
+        margin-top: 15px;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    button[type="submit"]:hover {
+        background-color: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Navigation buttons */
+    .navigation-buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .btn {
+        display: inline-block;
+        background-color: #3498db;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn:hover {
+        background-color: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        text-decoration: none;
+    }
+</style>
+
+<h2>Send Research Collaboration Request</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    
+    <label for="to_hospital">Select Affiliated Hospital:</label>
+    <select name="to_hospital" id="to_hospital" required>
+        {% for hospital in affiliated_hospitals %}
+            <option value="{{ hospital.id }}">{{ hospital.name }}</option>
+        {% empty %}
+            <option disabled>No affiliated hospitals available</option>
+        {% endfor %}
+    </select>
+    
+    <label for="project_id">Select Research Project:</label>
+    <select name="project_id" id="project_id" required>
+        {% for project in research_projects %}
+            <option value="{{ project.id }}">{{ project.title }}</option>
+        {% empty %}
+            <option disabled>No research projects available</option>
+        {% endfor %}
+    </select>
+    
+    <button type="submit">Send Collaboration Request</button>
+</form>
+
+<div class="navigation-buttons">
+    <a href="{% url 'dashboard' %}" class="btn">Back to Dashboard</a>
+</div>

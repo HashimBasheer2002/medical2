@@ -13,7 +13,8 @@ from .views import patient_register, hospital_register, doctor_register, login_p
     send_message, start_hospital_chat, hospital_messages, doctor_chats, payment_success, doctor_profile, \
     edit_doctor_profile, delete_doctor, view_doctor_profile, admin_view_all_patients, admin_view_all_ambulances, \
     admin_view_all_feedbacks, admin_view_all_appointments, admin_view_all_doctors, admin_view_patient_details, \
-    submit_complaint, admin_view_complaints, mark_complaint_resolved
+    submit_complaint, admin_view_complaints, mark_complaint_resolved,research_request,received_research_requests,accept_research_request,reject_research_request,create_research_project,work_on_research,sent_research_requests
+
 
 urlpatterns = [
     path('',home,name="home"),
@@ -117,7 +118,20 @@ urlpatterns = [
     path('view/complaints/', admin_view_complaints, name='admin_view_complaints'),
     path('view/complaints/resolve/<int:complaint_id>/', mark_complaint_resolved, name='mark_complaint_resolved'),
 
+
+
+    path("research/send_request/", research_request, name="send_research_request"),
+    path("research/received_requests/", received_research_requests, name="received_research_requests"),
+    path("research/accept_request/<int:request_id>/", accept_research_request, name="accept_research_request"),
+    path("research/reject_request/<int:request_id>/", reject_research_request, name="reject_research_request"),
+    path("create_research_project/", create_research_project, name="create_research_project"),
+    path("work-on-research/<int:project_id>/", work_on_research, name="work_on_research"),
+  # ✅ Work on Research URL
+    path("sent-research-requests/", sent_research_requests, name="sent_research_requests"),
 ]
+
+
+
 
 
 
