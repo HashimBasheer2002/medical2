@@ -730,7 +730,7 @@ def book_ambulance(request):
             booking = form.save(commit=False)
             booking.patient = request.user  # Assign patient automatically
             booking.save()
-            return JsonResponse({"message": "Ambulance booked successfully!"}, status=200)
+            return render(request,'track_ambulance.html')
         else:
             return JsonResponse({"errors": form.errors}, status=400)
 
