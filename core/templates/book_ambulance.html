@@ -1,141 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ambulance Booking</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --light: #f9fafb;
+            --dark: #1f2937;
+            --border: #e5e7eb;
+            --radius: 8px;
+        }
 
-<style>
-    /* General Styling */
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f9f9f9;
-    margin: 0;
-    padding: 20px;
-}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
 
-/* Form Title */
-.form-title {
-    text-align: center;
-    font-size: 2rem;
-    color: #333;
-    margin-bottom: 20px;
-}
+        body {
+            background-color: #f3f4f6;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
 
-/* Back to Dashboard Button */
-.btn-dashboard {
-    display: inline-block;
-    padding: 12px 24px;
-    margin-bottom: 20px;
-    background-color: #6c757d;
-    color: #fff;
-    font-size: 1rem;
-    text-decoration: none;
-    border-radius: 4px;
-    transition: background-color 0.3s ease;
-}
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
 
-.btn-dashboard:hover {
-    background-color: #5a6268;
-}
+        h1 {
+            color: var(--dark);
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+        }
 
-/* Form Container */
-.ambulance-form {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 30px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+        .ambulance-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
-/* Form Group */
-.form-group {
-    margin-bottom: 20px;
-}
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
 
-/* Labels */
-.form-label {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: #333;
-}
+        .form-label {
+            font-weight: 500;
+            color: var(--dark);
+        }
 
-/* Select and Input Fields */
-.select, .form-control {
-    width: 100%;
-    padding: 12px;
-    font-size: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
+        .form-control {
+            height: 45px;
+            padding: 0 15px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 16px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
 
-.select:focus, .form-control:focus {
-    outline: none;
-    border-color: #007BFF;
-}
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
 
-/* Submit Button */
-.btn-submit {
-    width: 100%;
-    padding: 12px;
-    background-color: #007BFF;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
+        #map {
+            height: 400px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 2px solid var(--border);
+        }
 
-.btn-submit:hover {
-    background-color: #0056b3;
-}
+        .location-info {
+            background-color: #f9fafb;
+            padding: 15px;
+            border-radius: var(--radius);
+            border-left: 4px solid var(--primary);
+            margin-bottom: 20px;
+        }
 
-</style>
-<h2 class="form-title">Book an Ambulance</h2>
+        #selected-coordinates {
+            display: inline-block;
+            margin-left: 5px;
+            font-weight: 600;
+            color: var(--success);
+        }
 
-<!-- Back to Dashboard Button -->
-<a href="{% url 'dashboard' %}" class="btn-dashboard">Back to Dashboard</a>
+        .btn-submit {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            height: 50px;
+            border-radius: var(--radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
 
-<form method="POST" action="{% url 'book_ambulance' %}" class="ambulance-form">
-    {% csrf_token %}
+        .btn-submit:hover {
+            background-color: var(--primary-dark);
+        }
 
-    <!-- Select Hospital -->
-    <div class="form-group">
-        <label for="hospitalSelect" class="form-label">Select Hospital:</label>
-        <select name="hospital" id="hospitalSelect" class="form-control">
-            {% for hospital in hospitals %}
-                <option value="{{ hospital.id }}">{{ hospital.name }}</option>
-            {% endfor %}
-        </select>
+        .map-container {
+            position: relative;
+        }
+
+        .map-instructions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            font-size: 14px;
+            max-width: 200px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            #map {
+                height: 300px;
+            }
+            
+            .map-instructions {
+                position: static;
+                margin-bottom: 10px;
+                max-width: 100%;
+            }
+        }
+
+        /* Loading spinner for ambulance selection */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Status badge for ambulance availability */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-available {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .status-unavailable {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Emergency Ambulance Service</h1>
+        
+        <form method="POST" action="{% url 'book_ambulance' %}" class="ambulance-form">
+            {% csrf_token %}
+
+            <!-- Select Hospital -->
+            <div class="form-group">
+                <label for="hospitalSelect" class="form-label">Select Hospital:</label>
+                <select name="hospital" id="hospitalSelect" class="form-control" required>
+                    <option value="">-- Select a hospital --</option>
+                    {% for hospital in hospitals %}
+                        <option value="{{ hospital.id }}">{{ hospital.name }}- ({{ hospital.location }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Select Ambulance -->
+            <div class="form-group">
+                <label for="ambulanceSelect" class="form-label">Select Ambulance:</label>
+                <div style="position: relative;">
+                    <select name="ambulance" id="ambulanceSelect" class="form-control" required>
+                        <option value="">Select a hospital first</option>
+                    </select>
+                    <div id="loading-ambulances" class="loading" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Location Information -->
+            <div class="location-info">
+                <p><strong>Selected Pickup Location:</strong> 
+                    <span id="selected-coordinates">Click on the map to select</span>
+                </p>
+            </div>
+
+            <!-- Leaflet Map -->
+            <div class="map-container">
+                <div class="map-instructions">
+                    Click anywhere on the map to set your pickup location
+                </div>
+                <div id="map"></div>
+            </div>
+
+            <!-- Hidden latitude and longitude -->
+            <input type="hidden" name="pickup_latitude" id="pickup_latitude" required>
+            <input type="hidden" name="pickup_longitude" id="pickup_longitude" required>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn-submit">Book Ambulance Now</button>
+        </form>
     </div>
 
-    <!-- Select Ambulance -->
-    <div class="form-group">
-        <label for="ambulanceSelect" class="form-label">Select Ambulance:</label>
-        <select name="ambulance" id="ambulanceSelect" class="form-control"></select>
-    </div>
+    <script>
+       // Initialize map
+var map = L.map('map').setView([9.9312, 76.2673], 13); // Kochi by default
 
-    <!-- Pickup Location -->
-    <div class="form-group">
-        <label for="pickup_location" class="form-label">Pickup Location:</label>
-        <input type="text" name="pickup_location" id="pickup_location" class="form-control" required>
-    </div>
+// Add OpenStreetMap tiles
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
 
-    <!-- Submit Button -->
-    <button type="submit" class="btn-submit">Book Ambulance</button>
-</form>
+var marker;
 
-<script>
+// On map click, set marker and update coordinates
+map.on('click', function (e) {
+    var lat = e.latlng.lat.toFixed(5);
+    var lng = e.latlng.lng.toFixed(5);
+
+    // Place or update marker
+    if (marker) {
+        marker.setLatLng(e.latlng);
+    } else {
+        marker = L.marker(e.latlng).addTo(map);
+    }
+
+    // Update hidden input fields
+    document.getElementById('pickup_latitude').value = lat;
+    document.getElementById('pickup_longitude').value = lng;
+
+    // Show coordinates to user
+    document.getElementById('selected-coordinates').textContent = `${lat}, ${lng}`;
+    
+    // Change color to show it's selected
+    document.getElementById('selected-coordinates').style.color = '#10b981';
+});
+
+// Fetch ambulances dynamically based on hospital selection
 document.getElementById("hospitalSelect").addEventListener("change", function () {
-    fetch(`/api/get-ambulances/${this.value}/`)
+    let hospitalId = this.value;
+    let ambulanceSelect = document.getElementById("ambulanceSelect");
+    let loadingIndicator = document.getElementById("loading-ambulances");
+
+    ambulanceSelect.innerHTML = ""; // Clear previous
+
+    if (!hospitalId) {
+        ambulanceSelect.innerHTML = "<option value=''>Select a hospital first</option>";
+        return;
+    }
+
+    // Show loading
+    loadingIndicator.style.display = "inline-block";
+
+    fetch(`/api/get-ambulances/${hospitalId}/`)
         .then(response => response.json())
         .then(data => {
-            let ambulanceSelect = document.getElementById("ambulanceSelect");
-            ambulanceSelect.innerHTML = "";
-            data.ambulances.forEach(ambulance => {
-                let option = document.createElement("option");
-                option.value = ambulance.id;
-                option.textContent = ambulance.vehicle_number;
-                ambulanceSelect.appendChild(option);
-            });
+            // Hide loading
+            loadingIndicator.style.display = "none";
+
+            if (data.ambulances.length === 0) {
+                ambulanceSelect.innerHTML = "<option value=''>No ambulances available</option>";
+            } else {
+                ambulanceSelect.innerHTML = "<option value=''>-- Select an ambulance --</option>";
+                data.ambulances.forEach(ambulance => {
+                    let option = document.createElement("option");
+                    option.value = ambulance.id;
+                    option.textContent = `${ambulance.vehicle_number} (${ambulance.ambulance_type || 'Standard'}) - ${ambulance.location}`;
+                    ambulanceSelect.appendChild(option);
+                });
+            }
+        })
+        .catch(err => {
+            // Hide loading
+            loadingIndicator.style.display = "none";
+            ambulanceSelect.innerHTML = "<option value=''>Error fetching ambulances</option>";
+            console.error(err);
         });
 });
-</script>
+
+// Form validation before submit
+document.querySelector('.ambulance-form').addEventListener('submit', function(event) {
+    const lat = document.getElementById('pickup_latitude').value;
+    const lng = document.getElementById('pickup_longitude').value;
+
+    if (!lat || !lng) {
+        event.preventDefault();
+        alert('Please select a pickup location on the map.');
+    }
+});
+
+    </script>
+</body>
+</html>

@@ -127,10 +127,20 @@ from django import forms
 from .models import Appointment
 
 
+from django import forms
+from django.utils import timezone  # ✅ Fixing the missing import
+from .models import Appointment
+
 class AppointmentForm(forms.ModelForm):
     class Meta:
         model = Appointment
         fields = ['date', 'time', 'consultation_type', 'message']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),  # ✅ Calendar Selection
+            'time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),  # ✅ Time Picker
+            'consultation_type': forms.Select(attrs={'class': 'form-control'}),
+            'message': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
 
     def __init__(self, *args, **kwargs):
         self.hospital_id = kwargs.pop('hospital_id', None)
@@ -142,18 +152,21 @@ class AppointmentForm(forms.ModelForm):
         date = cleaned_data.get('date')
         time = cleaned_data.get('time')
 
-        # Check if an appointment already exists for the same doctor at this date and time
-        if Appointment.objects.filter(doctor_id=self.doctor_id, hospital_id=self.hospital_id, date=date,
-                                      time=time).exists():
+        # Prevent duplicate bookings
+        if Appointment.objects.filter(
+            doctor_id=self.doctor_id,
+            hospital_id=self.hospital_id,
+            date=date,
+            time=time
+        ).exists():
             raise forms.ValidationError("This time slot is already booked for the selected doctor.")
+
+        # Ensure the appointment date is not in the past
+        if date and date < timezone.now().date():
+            raise forms.ValidationError("You cannot book an appointment in the past.")
 
         return cleaned_data
 
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        if commit:
-            instance.save()
-        return instance
 
 
 class RescheduleAppointmentForm(forms.ModelForm):
@@ -185,7 +198,13 @@ class AmbulanceForm(forms.ModelForm):
 class AmbulanceBookingForm(forms.ModelForm):
     class Meta:
         model = AmbulanceBooking
-        fields = ["hospital", "ambulance", "pickup_location"]
+        fields = ["hospital", "ambulance", "pickup_latitude", "pickup_longitude"]
+        widgets = {
+            "pickup_latitude": forms.HiddenInput(),
+            "pickup_longitude": forms.HiddenInput(),
+        }
+
+
 
 
 class AffiliationRequestForm(forms.ModelForm):
@@ -227,22 +246,56 @@ class ReferralForm(forms.ModelForm):
 from django import forms
 from .models import Doctor
 
+from django import forms
+from .models import Doctor
+
 class DoctorProfileForm(forms.ModelForm):
     first_name = forms.CharField(max_length=50, required=True, label="First Name")
     last_name = forms.CharField(max_length=50, required=True, label="Last Name")
     email = forms.EmailField(required=True, label="Email")
     profile_picture = forms.ImageField(required=False, label="Profile Picture")
 
+    # ✅ Change to MultipleChoiceField with Checkbox
+    available_days = forms.MultipleChoiceField(
+        choices=Doctor.DAYS_OF_WEEK,
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+        label="Available Days"
+    )
+    available_start_time = forms.TimeField(
+        widget=forms.TimeInput(attrs={'type': 'time'}),
+        required=True,
+        label="Available Start Time"
+    )
+    available_end_time = forms.TimeField(
+        widget=forms.TimeInput(attrs={'type': 'time'}),
+        required=True,
+        label="Available End Time"
+    )
+
     class Meta:
         model = Doctor
-        fields = ["specialization", "phone", "appointment_fee", "profile_picture"]
+        fields = [
+            "specialization",
+            "phone",
+            "appointment_fee",
+            "profile_picture",
+            "available_days",
+            "available_start_time",
+            "available_end_time"
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance and self.instance.user:
+        if self.instance:
             self.fields["first_name"].initial = self.instance.user.first_name
             self.fields["last_name"].initial = self.instance.user.last_name
             self.fields["email"].initial = self.instance.user.email
+            
+            # ✅ Convert stored CSV to a list
+            self.fields["available_days"].initial = self.instance.available_days.split(",") if self.instance.available_days else []
+            self.fields["available_start_time"].initial = self.instance.available_start_time
+            self.fields["available_end_time"].initial = self.instance.available_end_time
 
     def save(self, commit=True):
         doctor = super().save(commit=False)
@@ -250,10 +303,17 @@ class DoctorProfileForm(forms.ModelForm):
         user.first_name = self.cleaned_data["first_name"]
         user.last_name = self.cleaned_data["last_name"]
         user.email = self.cleaned_data["email"]
+
+        # ✅ Convert list to CSV before saving
+        doctor.available_days = ",".join(self.cleaned_data["available_days"])
+        doctor.available_start_time = self.cleaned_data["available_start_time"]
+        doctor.available_end_time = self.cleaned_data["available_end_time"]
+
         if commit:
             user.save()
             doctor.save()
         return doctor
+
 
 
 from django import forms
@@ -268,6 +328,15 @@ class ComplaintForm(forms.ModelForm):
             'message': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Describe your issue'}),
         }
 
+        from django import forms
+from .models import Doctor
 
+class DoctorStatusForm(forms.ModelForm):
+    class Meta:
+        model = Doctor
+        fields = ['status']
+        widgets = {
+            'status': forms.Select(attrs={'class': 'form-control'}),
+        }
 
 

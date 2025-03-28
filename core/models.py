@@ -17,6 +17,13 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return f"{self.username} ({self.role})"
 
+class Specialization(models.Model):
+    name = models.CharField(max_length=255, unique=True)  # Unique specializations
+
+    def __str__(self):
+        return self.name
+
+
 # Hospital Model
 class Hospital(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
@@ -26,16 +33,13 @@ class Hospital(models.Model):
     phone = models.CharField(max_length=15)
     location = models.CharField(max_length=255,default=True)
     affiliated_hospitals = models.ManyToManyField("self", blank=True, symmetrical=True)
+    specialization = models.ForeignKey(Specialization, on_delete=models.CASCADE,default=True)
 
 
     def __str__(self):
         return self.name
 
-class Specialization(models.Model):
-    name = models.CharField(max_length=255, unique=True)  # Unique specializations
 
-    def __str__(self):
-        return self.name
 
 
 # Doctor Model
@@ -45,18 +49,38 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class Doctor(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('leave', 'On Leave'),
+        ('rounds', 'On Rounds'),
+        ('busy', 'Busy'),
+    ]
+
+    DAYS_OF_WEEK = [
+        ('Monday', 'Monday'),
+        ('Tuesday', 'Tuesday'),
+        ('Wednesday', 'Wednesday'),
+        ('Thursday', 'Thursday'),
+        ('Friday', 'Friday'),
+        ('Saturday', 'Saturday'),
+        ('Sunday', 'Sunday'),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE)
-    specialization = models.ForeignKey(Specialization, on_delete=models.CASCADE)
+    hospital = models.ForeignKey('Hospital', on_delete=models.CASCADE)
+    specialization = models.ForeignKey('Specialization', on_delete=models.CASCADE)
     phone = models.CharField(max_length=15)
     appointment_fee = models.DecimalField(max_digits=10, decimal_places=2, default=500)
     profile_picture = models.ImageField(upload_to="doctor_profiles/", default="default_profile.jpg")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+
+    # ✅ Change to TextField (comma-separated values)
+    available_days = models.TextField(default="Monday")  
+    available_start_time = models.TimeField(default='09:00')  
+    available_end_time = models.TimeField(default='17:00')  # New field for end time
 
     def __str__(self):
         return f"Dr. {self.user.first_name} {self.user.last_name} - {self.specialization}"
-
-
-
 
 # Patient Model
 CustomUser = get_user_model()
@@ -174,7 +198,12 @@ class AmbulanceBooking(models.Model):
     hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, null=True, blank=True)
     patient = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     ambulance = models.ForeignKey(Ambulance, on_delete=models.CASCADE)
-    pickup_location = models.CharField(max_length=255,db_default=True)
+    pickup_location = models.CharField(max_length=255, db_default=True)
+    
+    # New fields
+    pickup_latitude = models.FloatField(null=True, blank=True)
+    pickup_longitude = models.FloatField(null=True, blank=True)
+    
     status = models.CharField(
         max_length=20,
         choices=[("Pending", "Pending"), ("Accepted", "Accepted"), ("On the Way", "On the Way"), ("Completed", "Completed")],
@@ -185,6 +214,7 @@ class AmbulanceBooking(models.Model):
 
     def __str__(self):
         return f"{self.patient.username} - {self.ambulance.vehicle_number} ({self.status})"
+
 
 
 class AffiliationRequest(models.Model):

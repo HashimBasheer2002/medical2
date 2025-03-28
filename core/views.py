@@ -108,6 +108,7 @@ def edit_doctor_profile(request):
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Doctor, Hospital
+from .models import Specialization
 
 @login_required
 def doctor_list(request, hospital_id):
@@ -302,6 +303,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Appointment, Doctor, Hospital
 from .forms import AppointmentForm
 
+
 # Initialize Razorpay Client
 razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
@@ -350,6 +352,36 @@ def book_appointment(request, hospital_id, doctor_id):
         form = AppointmentForm()
 
     return render(request, 'book_appointment.html', {'form': form, 'hospital': hospital, 'doctor': doctor})
+
+
+
+def hospital_specializations(request, hospital_id):
+    hospital = get_object_or_404(Hospital, id=hospital_id)
+
+    # Get specializations of doctors in this hospital
+    specializations = Specialization.objects.filter(doctor__hospital=hospital).distinct()
+
+    return render(request, 'specializations.html', {
+        'hospital': hospital,
+        'specializations': specializations,
+    })
+
+
+def doctors_by_specialization(request, hospital_id, specialization_id):
+    hospital = get_object_or_404(Hospital, id=hospital_id)
+    specialization = get_object_or_404(Specialization, id=specialization_id)
+
+    # Get doctors filtered by hospital & specialization
+    doctors = Doctor.objects.filter(hospital=hospital, specialization=specialization)
+
+    return render(request, 'doctors_list.html', {
+        'hospital': hospital,
+        'specialization': specialization,
+        'doctors': doctors,
+    })
+
+
+
 
 @csrf_exempt
 def razorpay_webhook(request):
@@ -728,14 +760,15 @@ def book_ambulance(request):
         form = AmbulanceBookingForm(request.POST)
         if form.is_valid():
             booking = form.save(commit=False)
-            booking.patient = request.user  # Assign patient automatically
+            booking.patient = request.user
             booking.save()
-            return render(request,'track_ambulance.html')
+            return render(request, 'booked.html', {'booking': booking})
         else:
             return JsonResponse({"errors": form.errors}, status=400)
 
+    form = AmbulanceBookingForm()
     hospitals = Hospital.objects.all()
-    return render(request, "book_ambulance.html", {"hospitals": hospitals})
+    return render(request, "book_ambulance.html", {"form": form, "hospitals": hospitals})
 
 
 @login_required
@@ -1132,17 +1165,13 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 
 
-
-@login_required
 def delete_doctor(request, doctor_id):
-    doctor = get_object_or_404(Doctor, id=doctor_id)
-
-    # Ensure only the hospital can delete the doctor
-    if request.user != doctor.hospital.user:
-        return redirect("some_error_page")  # Redirect to an error page or show a message
-
+    doctor = get_object_or_404(Doctor, id=doctor_id)  # This raises 404 if doctor doesn't exist
+    hospital_id = doctor.hospital.id  # Assuming Doctor has a ForeignKey to Hospital
     doctor.delete()
-    return redirect("doctor_list")
+    return redirect('doctor_list', hospital_id=hospital_id)
+
+
 
 
 
@@ -1341,3 +1370,25 @@ def sent_research_requests(request):
     return render(request, "sent_research_requests_list.html", {
         "sent_requests": sent_requests
     })
+
+
+# views.py
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Doctor
+from .forms import DoctorStatusForm
+
+@login_required
+def update_doctor_status(request):
+    doctor = get_object_or_404(Doctor, user=request.user)
+    
+    if request.method == 'POST':
+        form = DoctorStatusForm(request.POST, instance=doctor)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')  # Redirect after update
+    else:
+        form = DoctorStatusForm(instance=doctor)
+    
+    return render(request, 'doctor_status_update.html', {'form': form})

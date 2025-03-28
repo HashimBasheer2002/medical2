@@ -230,9 +230,10 @@
                         <i class="fas fa-map-marker-alt"></i> {{ hospital.location }}
                     </td>
                     <td>
-                        <a href="{% url 'doctor_list' hospital.id %}" class="book-button">
-                            <i class="fas fa-calendar-check"></i> Book Appointment
+                        <a href="{% url 'hospital_specializations' hospital.id %}" class="book-button">
+                            <i class="fas fa-calendar-check"></i> View Specializations
                         </a>
+                        
                     </td>
                 </tr>
                 {% empty %}

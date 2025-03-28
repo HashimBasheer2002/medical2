@@ -13,7 +13,7 @@ from .views import patient_register, hospital_register, doctor_register, login_p
     send_message, start_hospital_chat, hospital_messages, doctor_chats, payment_success, doctor_profile, \
     edit_doctor_profile, delete_doctor, view_doctor_profile, admin_view_all_patients, admin_view_all_ambulances, \
     admin_view_all_feedbacks, admin_view_all_appointments, admin_view_all_doctors, admin_view_patient_details, \
-    submit_complaint, admin_view_complaints, mark_complaint_resolved,research_request,received_research_requests,accept_research_request,reject_research_request,create_research_project,work_on_research,sent_research_requests
+    submit_complaint, admin_view_complaints, mark_complaint_resolved,research_request,received_research_requests,accept_research_request,reject_research_request,create_research_project,work_on_research,sent_research_requests,hospital_specializations,doctors_by_specialization,update_doctor_status
 
 
 urlpatterns = [
@@ -128,6 +128,12 @@ urlpatterns = [
     path("work-on-research/<int:project_id>/", work_on_research, name="work_on_research"),
   # ✅ Work on Research URL
     path("sent-research-requests/", sent_research_requests, name="sent_research_requests"),
+
+     path('hospital/<int:hospital_id>/specializations/', hospital_specializations, name='hospital_specializations'),
+    path('hospital/<int:hospital_id>/specialization/<int:specialization_id>/doctors/', doctors_by_specialization, name='doctors_by_specialization'),
+      path('doctor/update-status/', update_doctor_status, name='update_doctor_status'),
+
+    
 ]
 
 

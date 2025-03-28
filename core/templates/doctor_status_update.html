@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Update Doctor Status</title>
+    <style>
+        body {
+            background: #f0f4f7;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            margin: 50px auto;
+            max-width: 500px;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 25px;
+            color: #2c3e50;
+        }
+        select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 12px 0;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .back-button {
+            background-color: #95a5a6;
+            margin-top: 10px;
+        }
+        .back-button:hover {
+            background-color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Update Your Status</h2>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Update Status</button>
+    </form>
+
+    <!-- Back to Dashboard Button -->
+    <form action="{% url 'dashboard' %}" method="get">
+        <button type="submit" class="back-button">Back to Dashboard</button>
+    </form>
+</div>
+
+</body>
+</html>
