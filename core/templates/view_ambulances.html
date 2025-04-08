@@ -94,6 +94,14 @@
                 <span class="{% if ambulance.is_available %}available{% else %}not-available{% endif %}">
                     {% if ambulance.is_available %} Available {% else %} Not Available {% endif %}
                 </span>
+                
+                <!-- Remove button form -->
+                <form method="POST" action="{% url 'delete_ambulance' ambulance.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" style="margin-left: 10px; background-color: #dc3545; color: white; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer;">
+                        Remove
+                    </button>
+                </form>
             </li>
         {% empty %}
             <li>No ambulances available.</li>

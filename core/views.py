@@ -1172,6 +1172,18 @@ def delete_doctor(request, doctor_id):
     return redirect('doctor_list', hospital_id=hospital_id)
 
 
+from django.contrib import messages
+from django.shortcuts import redirect, get_object_or_404
+from .models import Hospital
+
+@login_required
+
+def delete_hospital(request, pk):  # <-- Accept 'pk' here
+    hospital = get_object_or_404(Hospital, pk=pk)
+    hospital.delete()
+    return redirect('hospital_list')  # or your hospital list view name
+
+
 
 
 
@@ -1392,3 +1404,20 @@ def update_doctor_status(request):
         form = DoctorStatusForm(instance=doctor)
     
     return render(request, 'doctor_status_update.html', {'form': form})
+
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect
+from .models import Ambulance
+
+@login_required
+def delete_ambulance(request, pk):
+    ambulance = get_object_or_404(Ambulance, pk=pk)
+
+    # Optional: Restrict deletion to hospital user only
+    if request.user != ambulance.hospital.user:
+        return redirect('dashboard')  # or return a 403 Forbidden
+
+    ambulance.delete()
+    return redirect('view_ambulances', hospital_id=ambulance.hospital.id)
