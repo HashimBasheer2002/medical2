@@ -13,7 +13,7 @@ from .views import patient_register, hospital_register, doctor_register, login_p
     send_message, start_hospital_chat, hospital_messages, doctor_chats, payment_success, doctor_profile, \
     edit_doctor_profile, delete_doctor, view_doctor_profile, admin_view_all_patients, admin_view_all_ambulances, \
     admin_view_all_feedbacks, admin_view_all_appointments, admin_view_all_doctors, admin_view_patient_details, \
-    submit_complaint, admin_view_complaints, mark_complaint_resolved,research_request,received_research_requests,accept_research_request,reject_research_request,create_research_project,work_on_research,sent_research_requests,hospital_specializations,doctors_by_specialization,update_doctor_status,delete_hospital,delete_ambulance
+    submit_complaint, admin_view_complaints, mark_complaint_resolved,research_request,received_research_requests,accept_research_request,reject_research_request,create_research_project,work_on_research,sent_research_requests,hospital_specializations,doctors_by_specialization,update_doctor_status,delete_hospital,delete_ambulance,ChatbotView,approve_hospitals,approve_hospital_action
 
 
 urlpatterns = [
@@ -35,6 +35,8 @@ urlpatterns = [
     path("hospital/<int:hospital_id>/doctor/<int:doctor_id>/book/", book_appointment, name="book_appointment"),
     path('appointment-success/<int:appointment_id>/', appointment_success, name='appointment_success'),
     path("my-appointments/", patient_appointments, name="patient_appointments"),
+    path('approve-hospitals/', approve_hospitals, name='approve_hospitals'),
+    path('approve-hospital/<int:hospital_id>/', approve_hospital_action, name='approve_hospital_action'),
 
     # Doctor views
     path("doctor/appointments/", doctor_appointments, name="doctor_appointments"),
@@ -134,7 +136,7 @@ urlpatterns = [
       path('doctor/update-status/', update_doctor_status, name='update_doctor_status'),
       path('hospital/delete/<int:pk>/', delete_hospital, name='delete_hospital'),
       path('ambulance/delete/<int:pk>/', delete_ambulance, name='delete_ambulance'),
-
+      path('chatbot/', ChatbotView.as_view(), name='bot'),  # Chatbot GET & POST API
 
     
 ]

@@ -250,6 +250,7 @@
                 <tr>
                     <th>Doctor Name</th>
                     <th>Experience</th>
+                    <th>License No</th>
                     <th>Fee</th>
                     <th>Status</th>
                     <th>Available Days</th>
@@ -262,7 +263,8 @@
                 <tr>
                     <td class="doctor-name">{{ doctor.user }}</td>
                     <td><span class="experience-badge">{{ doctor.experience }} years</span></td>
-                    <td><span class="fee">{{ doctor.appointment_fee }}</span></td>
+                    <td>{{ doctor.license_number }}</td>  <!-- ✅ License number added here -->
+                    <td><span class="fee">₹{{ doctor.appointment_fee }}</span></td>
                     <td>{{ doctor.get_status_display }}</td>
                     <td>{{ doctor.available_days }}</td>
                     <td>{{ doctor.available_start_time|time:"h:i A" }} - {{ doctor.available_end_time|time:"h:i A" }}</td>
@@ -274,11 +276,12 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="empty-message">No doctors available for this specialization.</td>
+                    <td colspan="8" class="empty-message">No doctors available for this specialization.</td>  <!-- ✅ colspan fixed -->
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        
         <a href="{% url 'hospital_specializations' hospital.id %}" class="back-link">Back to Specializations</a>
     </div>
 </body>

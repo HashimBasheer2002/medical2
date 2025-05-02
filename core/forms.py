@@ -46,23 +46,32 @@ class HospitalRegistrationForm(UserCreationForm):
         model = CustomUser
         fields = ["username", "email", "password1", "password2", "hospital_name", "description", "location"]
 
-    def save(self, commit=True):
+    def save(self, commit=True):  # ✅ Now it's inside the class
         user = super().save(commit=False)
-        user.set_password(self.cleaned_data["password1"])  # ✅ Corrected password field
-        user.role = "hospital"  # ✅ Correct role assignment
-
+        user.set_password(self.cleaned_data["password1"])
+        user.role = "hospital"  # ✅ Set role here
+        user.is_active = False  # 🔒 inactive until approved
         if commit:
             user.save()
             Hospital.objects.create(
                 user=user,
                 name=self.cleaned_data["hospital_name"],
                 description=self.cleaned_data["description"],
-                location=self.cleaned_data["location"]
+                location=self.cleaned_data["location"],
+                is_approved=False
             )
         return user
 
+
+
+
 # Doctor Registration Form
 from django import forms
+from .models import CustomUser, Doctor, Specialization
+
+
+from django import forms
+from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser, Doctor, Specialization
 
 
@@ -74,10 +83,11 @@ class DoctorRegistrationForm(UserCreationForm):
         empty_label="Select Specialization"
     )
     phone = forms.CharField(max_length=15, required=True, label="Phone Number")
+    license_number = forms.CharField(max_length=100, required=True, label="License Number")  # ✅ New field
 
     class Meta:
         model = CustomUser
-        fields = ["username", "email", "password1", "password2", "specialization", "phone"]
+        fields = ["username", "email", "password1", "password2", "specialization", "phone", "license_number"]
 
     def __init__(self, *args, **kwargs):
         self.hospital = kwargs.pop("hospital", None)  # ✅ Get hospital from view
@@ -88,14 +98,15 @@ class DoctorRegistrationForm(UserCreationForm):
         user.role = "doctor"  # ✅ Assign role
         if commit:
             user.save()
-            # ✅ Use self.hospital instead of self.cleaned_data["hospital"]
             Doctor.objects.create(
                 user=user,
-                hospital=self.hospital,  # ✅ Assign hospital correctly
+                hospital=self.hospital,
                 specialization=self.cleaned_data["specialization"],
-                phone=self.cleaned_data["phone"]
+                phone=self.cleaned_data["phone"],
+                license_number=self.cleaned_data["license_number"]  # ✅ Save license number
             )
         return user
+
 
 
 # Login Form
@@ -255,7 +266,8 @@ class DoctorProfileForm(forms.ModelForm):
     email = forms.EmailField(required=True, label="Email")
     profile_picture = forms.ImageField(required=False, label="Profile Picture")
 
-    # ✅ Change to MultipleChoiceField with Checkbox
+    license_number = forms.CharField(max_length=50, required=True, label="License Number")  # ✅ New field
+
     available_days = forms.MultipleChoiceField(
         choices=Doctor.DAYS_OF_WEEK,
         widget=forms.CheckboxSelectMultiple,
@@ -280,6 +292,7 @@ class DoctorProfileForm(forms.ModelForm):
             "phone",
             "appointment_fee",
             "profile_picture",
+            "license_number",              # ✅ Include in Meta fields
             "available_days",
             "available_start_time",
             "available_end_time"
@@ -291,8 +304,7 @@ class DoctorProfileForm(forms.ModelForm):
             self.fields["first_name"].initial = self.instance.user.first_name
             self.fields["last_name"].initial = self.instance.user.last_name
             self.fields["email"].initial = self.instance.user.email
-            
-            # ✅ Convert stored CSV to a list
+            self.fields["license_number"].initial = self.instance.license_number  # ✅ Pre-fill license number
             self.fields["available_days"].initial = self.instance.available_days.split(",") if self.instance.available_days else []
             self.fields["available_start_time"].initial = self.instance.available_start_time
             self.fields["available_end_time"].initial = self.instance.available_end_time
@@ -304,7 +316,7 @@ class DoctorProfileForm(forms.ModelForm):
         user.last_name = self.cleaned_data["last_name"]
         user.email = self.cleaned_data["email"]
 
-        # ✅ Convert list to CSV before saving
+        doctor.license_number = self.cleaned_data["license_number"]  # ✅ Save license number
         doctor.available_days = ",".join(self.cleaned_data["available_days"])
         doctor.available_start_time = self.cleaned_data["available_start_time"]
         doctor.available_end_time = self.cleaned_data["available_end_time"]

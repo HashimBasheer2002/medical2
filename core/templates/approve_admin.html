@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Pending Hospital Approvals</h2>
+    
+    {% if hospitals %}
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Hospital Name</th>
+                    <th>Description</th>
+                    <th>Location</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hospital in hospitals %}
+                <tr>
+                    <td>{{ hospital.name }}</td>
+                    <td>{{ hospital.description }}</td>
+                    <td>{{ hospital.location }}</td>
+                    <td>{{ hospital.user.username }}</td>
+                    <td>{{ hospital.user.email }}</td>
+                    <td>
+                        <form method="post" action="{% url 'approve_hospital_action' hospital.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No pending hospitals for approval.</p>
+    {% endif %}
+</div>
+{% endblock %}

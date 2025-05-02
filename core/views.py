@@ -35,22 +35,51 @@ def patient_register(request):
         form = PatientRegistrationForm()
     return render(request, "patient_register.html", {"form": form})
 
-# 🔹 Admin Adding Hospital
-
-@login_required
 def hospital_register(request):
-    if request.user.role != "admin":
-        return redirect("dashboard")  # Prevent unauthorized access
-
     if request.method == "POST":
         form = HospitalRegistrationForm(request.POST)
         if form.is_valid():
-            form.save()  # ✅ Save user and hospital
-            return redirect("hospital_list")  # ✅ Redirect to hospital list after registration
+            form.save()  # ✅ Let the form handle everything
+            messages.success(request, "Registration submitted. Await admin approval.")
+            return redirect("login_page")
     else:
         form = HospitalRegistrationForm()
 
     return render(request, "hospital_register.html", {"form": form})
+
+
+
+@login_required
+def approve_hospitals(request):
+    if request.user.role != "admin":
+        return redirect("dashboard")
+
+    pending_hospitals = Hospital.objects.filter(is_approved=False)
+    return render(request, "approve_hospitals.html", {"hospitals": pending_hospitals})
+
+
+
+@login_required
+def approve_hospital_action(request, hospital_id):
+    if request.user.role != "admin":
+        return redirect("dashboard")
+
+    hospital = get_object_or_404(Hospital, id=hospital_id, is_approved=False)
+    hospital.is_approved = True
+    hospital.save()
+
+    # Also activate user
+    user = hospital.user
+    user.is_active = True
+    user.save()
+
+    messages.success(request, f"Hospital '{hospital.name}' approved successfully.")
+    return redirect("approve_hospitals")
+
+
+
+
+
 @login_required
 def doctor_register(request):
     if request.user.role != "hospital":
@@ -129,20 +158,54 @@ def doctor_list(request, hospital_id):
 
 
 # 🔹 Single Login View for Everyone
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from .forms import LoginForm
+from .models import Hospital  # ✅ Make sure Hospital is imported
+
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
 def login_page(request):
     if request.method == "POST":
         form = LoginForm(request.POST)
         if form.is_valid():
             username = form.cleaned_data["username"]
             password = form.cleaned_data["password"]
-            user = authenticate(username=username, password=password)
 
+            # Step 1: Check if user exists first
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                return render(request, "login.html", {
+                    "form": form,
+                    "error": "Invalid credentials"
+                })
+
+            # Step 2: Check if hospital and not approved
+            if user.role == "hospital":
+                try:
+                    hospital = Hospital.objects.get(user=user)
+                    if not hospital.is_approved:
+                        return render(request, "not_approved.html")
+                except Hospital.DoesNotExist:
+                    return render(request, "login.html", {
+                        "form": form,
+                        "error": "Hospital record not found"
+                    })
+
+            # Step 3: Temporarily set user active to authenticate
+            if not user.is_active:
+                return render(request, "not_approved.html")
+
+            # Step 4: Authenticate and log in
+            user = authenticate(username=username, password=password)
             if user:
                 login(request, user)
 
-                # 🔹 Fixing Admin Redirection
+                # Redirect by role
                 if user.is_superuser or user.role == "admin":
-                    return redirect("admin_dashboard")  # ✅ Ensure admin goes to admin dashboard
+                    return redirect("admin_dashboard")
                 elif user.role == "hospital":
                     return redirect("hospital_dashboard")
                 elif user.role == "doctor":
@@ -150,10 +213,16 @@ def login_page(request):
                 else:
                     return redirect("patient_dashboard")
 
-        return render(request, "login.html", {"form": form, "error": "Invalid credentials"})
+        # Catch invalid password or user not found
+        return render(request, "login.html", {
+            "form": form,
+            "error": "Invalid credentials"
+        })
 
     form = LoginForm()
     return render(request, "login.html", {"form": form})
+
+
 
 # 🔹 Dashboard Redirect
 from django.shortcuts import render, get_object_or_404
@@ -1421,3 +1490,86 @@ def delete_ambulance(request, pk):
 
     ambulance.delete()
     return redirect('view_ambulances', hospital_id=ambulance.hospital.id)
+
+
+
+import re
+import groq
+
+
+    
+client = groq.Client(api_key="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")
+
+
+def get_groq_response(user_input):
+    """
+    Communicate with the GROQ chatbot to get a response based on user input.
+    """
+    system_prompt = {
+        "role": "system",
+        "content": "You are a helpful assistant. You reply with very short answers ."
+    }
+
+    chat_history = [system_prompt]
+
+    # Append user input to the chat history
+    chat_history.append({"role": "user", "content": user_input})
+
+    # Get response from GROQ API
+    chat_completion = client.chat.completions.create(
+        model="llama3-70b-8192",
+        messages=chat_history,
+        max_tokens=100,
+        temperature=1.2
+    )
+
+    response = chat_completion.choices[0].message.content
+    print(response)
+    # Format response (convert bold to <b>bold</b>)
+    response = re.sub(r'\\(.?)\\*', r'<b>\1</b>', response)
+
+    return response
+from django.views import View
+from django.http import JsonResponse
+from django.shortcuts import render
+import json
+
+
+class ChatbotView(View):
+    def get(self, request):
+        return render(request,"chatbot.html")
+    
+    def post(self, request): 
+        try:
+            body = json.loads(request.body)
+            user_input = body.get('userInput')
+        except json.JSONDecodeError as e:
+            return JsonResponse({"error": "Invalid JSON format."})
+    
+        if not user_input:  # If user_input is None or empty
+            print("no")
+            return JsonResponse({"error": "No user input provided."})  
+        
+        print("User Input:", user_input)
+        
+        static_responses = {
+            "hi": "Hello! Welcome to the DJOBPORTAL , How can I assist you today?",
+            "hello": "Hi there! How can I help you?",
+            "how are you": "I'm just a chatbot, but I'm doing great! How about you?",
+            "bye": "Goodbye! Take care.",
+            "whats up": "Not much, just here to help you with  queries. How can I help you today?",
+        }
+
+        lower_input = user_input.lower().strip()
+        if lower_input in static_responses:
+            print(static_responses[lower_input])
+            return JsonResponse({'response': static_responses[lower_input]})
+        
+        try:
+            print("Processing via GROQ")
+            data = get_groq_response(user_input)
+            print(data)
+            treatment_list = data.split('\n')
+            return JsonResponse({'response': treatment_list})
+        except Exception as e:
+            return JsonResponse({"error": f"Failed to get GROQ response: {str(e)}"})

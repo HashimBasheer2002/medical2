@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="admin-approval-container">
+    <div class="header-section">
+        <h2>Pending Hospital Approvals</h2>
+        <div class="header-pill">
+            {% if hospitals %}
+            <span>{{ hospitals|length }} pending</span>
+            {% else %}
+            <span>0 pending</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if hospitals %}
+    <div class="table-responsive">
+        <table class="approval-table">
+            <thead>
+                <tr>
+                    <th>Hospital Name</th>
+                    <th>Description</th>
+                    <th>Location</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hospital in hospitals %}
+                <tr>
+                    <td>
+                        <div class="hospital-name">
+                            <div class="hospital-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <path d="M19 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 18H5V4h14v16z"></path>
+                                    <path d="M11 14h2v4h-2zm0-8h2v4h-2z"></path>
+                                    <path d="M7 10h10v2H7z"></path>
+                                </svg>
+                            </div>
+                            {{ hospital.name }}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="description-cell">{{ hospital.description }}</div>
+                    </td>
+                    <td>
+                        <div class="location-badge">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"></path>
+                            </svg>
+                            {{ hospital.location }}
+                        </div>
+                    </td>
+                    <td>{{ hospital.user.username }}</td>
+                    <td>
+                        <a href="mailto:{{ hospital.user.email }}" class="email-link">
+                            {{ hospital.user.email }}
+                        </a>
+                    </td>
+                    <td>
+                        <form method="post" action="{% url 'approve_hospital_action' hospital.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="approve-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path>
+                                </svg>
+                                Approve
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 16h-2v-2h2v2zm0-4h-2V7h2v8z"></path>
+            </svg>
+        </div>
+        <p>No pending hospitals for approval.</p>
+        <span class="empty-subtitle">All hospitals have been reviewed</span>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    :root {
+        --primary-color: #3498db;
+        --secondary-color: #2980b9;
+        --success-color: #2ecc71;
+        --hover-success: #27ae60;
+        --text-color: #333;
+        --text-light: #666;
+        --border-color: #e0e0e0;
+        --light-bg: #f8f9fa;
+        --header-bg: #f5f7fa;
+        --border-radius: 8px;
+        --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .admin-approval-container {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        padding: 30px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .admin-approval-container::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    }
+
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .header-section h2 {
+        color: var(--text-color);
+        font-size: 24px;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .header-pill {
+        background-color: rgba(52, 152, 219, 0.1);
+        color: var(--primary-color);
+        padding: 4px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        margin-bottom: 20px;
+    }
+
+    .approval-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .approval-table th {
+        background-color: var(--header-bg);
+        color: var(--text-color);
+        font-weight: 600;
+        text-align: left;
+        padding: 14px 15px;
+        border-bottom: 2px solid var(--border-color);
+        font-size: 14px;
+    }
+
+    .approval-table td {
+        padding: 14px 15px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-light);
+        font-size: 14px;
+        vertical-align: middle;
+    }
+
+    .approval-table tr:hover {
+        background-color: rgba(245, 247, 250, 0.5);
+    }
+
+    .hospital-name {
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+        color: var(--text-color);
+    }
+
+    .hospital-icon {
+        width: 30px;
+        height: 30px;
+        margin-right: 10px;
+        background-color: rgba(52, 152, 219, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .hospital-icon svg {
+        width: 16px;
+        height: 16px;
+        fill: var(--primary-color);
+    }
+
+    .description-cell {
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .location-badge {
+        display: flex;
+        align-items: center;
+        background-color: rgba(52, 152, 219, 0.05);
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    .location-badge svg {
+        width: 14px;
+        height: 14px;
+        margin-right: 5px;
+        fill: var(--primary-color);
+    }
+
+    .email-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .email-link:hover {
+        color: var(--secondary-color);
+        text-decoration: underline;
+    }
+
+    .approve-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--success-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 15px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .approve-btn:hover {
+        background-color: var(--hover-success);
+        transform: translateY(-1px);
+    }
+
+    .approve-btn svg {
+        width: 16px;
+        height: 16px;
+        fill: white;
+        margin-right: 5px;
+    }
+
+    .empty-state {
+        padding: 40px 20px;
+        text-align: center;
+        background-color: var(--light-bg);
+        border-radius: var(--border-radius);
+    }
+
+    .empty-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 20px;
+        background-color: rgba(52, 152, 219, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .empty-icon svg {
+        width: 30px;
+        height: 30px;
+        fill: var(--primary-color);
+    }
+
+    .empty-state p {
+        font-size: 18px;
+        font-weight: 500;
+        color: var(--text-color);
+        margin-bottom: 8px;
+    }
+
+    .empty-subtitle {
+        color: var(--text-light);
+        font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+        .admin-approval-container {
+            padding: 20px 15px;
+        }
+        
+        .header-section {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .approval-table th, 
+        .approval-table td {
+            padding: 10px;
+        }
+        
+        .description-cell {
+            max-width: 120px;
+        }
+    }
+</style>
+{% endblock %}

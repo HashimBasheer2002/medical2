@@ -34,6 +34,7 @@ class Hospital(models.Model):
     location = models.CharField(max_length=255,default=True)
     affiliated_hospitals = models.ManyToManyField("self", blank=True, symmetrical=True)
     specialization = models.ForeignKey(Specialization, on_delete=models.CASCADE,default=True)
+    is_approved = models.BooleanField(default=False)
 
 
     def __str__(self):
@@ -77,7 +78,9 @@ class Doctor(models.Model):
     # ✅ Change to TextField (comma-separated values)
     available_days = models.TextField(default="Monday")  
     available_start_time = models.TimeField(default='09:00')  
-    available_end_time = models.TimeField(default='17:00')  # New field for end time
+    available_end_time = models.TimeField(default='17:00')
+    license_number = models.CharField(max_length=100, unique=True, null=True, blank=True)
+  # New field for end time
 
     def __str__(self):
         return f"Dr. {self.user.first_name} {self.user.last_name} - {self.specialization}"
